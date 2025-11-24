@@ -92,6 +92,23 @@
         </button>
       </div>
 
+      <audio
+        id="sound-move"
+        src="{{ url_for('static', filename='sounds/move.mp3') }}"
+      ></audio>
+      <audio
+        id="sound-win"
+        src="{{ url_for('static', filename='sounds/win.mp3') }}"
+      ></audio>
+      <audio
+        id="sound-lose"
+        src="{{ url_for('static', filename='sounds/lose.mp3') }}"
+      ></audio>
+      <audio
+        id="sound-click"
+        src="{{ url_for('static', filename='sounds/click.mp3') }}"
+      ></audio>
+
       <script src="{{ url_for('static', filename='script.js') }}"></script>
     </div>
   </body>

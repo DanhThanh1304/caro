@@ -48,9 +48,15 @@ const cardP2 = document.getElementById("p2-card");
 const turnInfoEl = document.getElementById("turnInfo");
 const moveCountEl = document.getElementById("moveCount");
 const modeSelect = document.getElementById("gameMode");
-const themeSelect = document.getElementById("themeSelect"); // Mới thêm
+const themeSelect = document.getElementById("themeSelect");
 const player2Title = document.getElementById("player2Title");
 
+// Modal Elements
+const modal = document.getElementById("resultModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalMsg = document.getElementById("modalMessage");
+
+// Khởi chạy game
 init();
 
 function init() {
@@ -58,18 +64,48 @@ function init() {
   updateUIState();
   startTurnTimer();
 
-  // Sự kiện chọn độ khó
-  modeSelect.addEventListener("change", () => {
-    gameMode = modeSelect.value;
-    player2Title.textContent = gameMode === "pvp" ? "Người 2 (O)" : "AI (O)";
-    resetGame();
-  });
+  // --- 1. SỰ KIỆN CHO GAME MODE (Độ khó) ---
+  if (modeSelect) {
+    modeSelect.addEventListener("mousedown", () => {
+      playSound("click");
+    });
 
-  // Sự kiện chọn Giao diện (Mới)
-  themeSelect.addEventListener("change", () => {
-    currentTheme = themeSelect.value;
-    drawBoard(); // Vẽ lại ngay lập tức
-  });
+    modeSelect.addEventListener("change", () => {
+      playSound("click");
+      gameMode = modeSelect.value;
+      player2Title.textContent = gameMode === "pvp" ? "Người 2 (O)" : "AI (O)";
+      resetGame();
+    });
+  }
+
+  // --- 2. SỰ KIỆN CHO THEME (Giao diện) ---
+  if (themeSelect) {
+    themeSelect.addEventListener("mousedown", () => {
+      playSound("click");
+    });
+
+    themeSelect.addEventListener("change", () => {
+      playSound("click");
+      currentTheme = themeSelect.value;
+      drawBoard();
+    });
+  }
+
+  // --- 3. SỰ KIỆN NÚT "VÁN MỚI" ---
+  const resetBtn = document.querySelector(".btn-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      playSound("click");
+    });
+  }
+
+  // --- 4. SỰ KIỆN NÚT TRONG MODAL ---
+  const modalBtn = document.querySelector(".btn-modal");
+  if (modalBtn) {
+    modalBtn.addEventListener("click", () => {
+      playSound("click");
+    });
+  }
 }
 
 function drawBoard() {
@@ -85,16 +121,14 @@ function drawBoard() {
   ctx.lineWidth = 1;
 
   for (let i = 0; i < BOARD_SIZE; i++) {
-    // Dọc
     ctx.moveTo(i * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2);
     ctx.lineTo(i * CELL_SIZE + CELL_SIZE / 2, canvas.height - CELL_SIZE / 2);
-    // Ngang
     ctx.moveTo(CELL_SIZE / 2, i * CELL_SIZE + CELL_SIZE / 2);
     ctx.lineTo(canvas.width - CELL_SIZE / 2, i * CELL_SIZE + CELL_SIZE / 2);
   }
   ctx.stroke();
 
-  // 3. Vẽ 5 điểm sao (Star points)
+  // 3. Vẽ điểm sao
   const stars = [3, 7, 11];
   ctx.fillStyle = theme.line;
   for (let r of stars) {
@@ -111,7 +145,7 @@ function drawBoard() {
     }
   }
 
-  // 4. Vẽ lại các quân cờ đã đánh
+  // 4. Vẽ quân cờ
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
       if (board[r][c] !== 0) {
@@ -129,7 +163,6 @@ function drawPiece(row, col, player) {
 
   ctx.beginPath();
 
-  // Logic màu sắc theo theme
   let color, stroke;
   if (player === 1) {
     color = theme.p1.color;
@@ -139,7 +172,6 @@ function drawPiece(row, col, player) {
     stroke = theme.p2.stroke;
   }
 
-  // Nếu là theme Gỗ, dùng Gradient 3D cho đẹp
   if (currentTheme === "wood") {
     const grad = ctx.createRadialGradient(x - 5, y - 5, 2, x, y, radius);
     if (player === 1) {
@@ -154,9 +186,7 @@ function drawPiece(row, col, player) {
     ctx.shadowBlur = 4;
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 2;
-  }
-  // Các theme khác vẽ phẳng (Flat) cho hiện đại
-  else {
+  } else {
     ctx.fillStyle = color;
     ctx.shadowColor = "transparent";
   }
@@ -164,14 +194,12 @@ function drawPiece(row, col, player) {
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Vẽ viền (nếu có) - Cần thiết cho quân trắng trên nền trắng
   if (stroke) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = stroke;
     ctx.stroke();
   }
 
-  // Reset bóng đổ
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
@@ -205,43 +233,46 @@ canvas.addEventListener("click", async (e) => {
 });
 
 function makeMove(row, col, player) {
+  // --- THÊM DÒNG NÀY ---
+  if (gameOver) return; // Nếu game đã kết thúc (hết giờ), chặn mọi nước đi
+  // --------------------
+
   board[row][col] = player;
   moveCount++;
   moveCountEl.textContent = moveCount;
 
-  // Vẽ lại bàn cờ để cập nhật nước đi mới
   drawBoard();
-
-  // Vẽ viền đỏ đánh dấu nước vừa đi
   highlightLastMove(row, col);
 
+  playSound("move");
+
   if (checkWin(player)) {
+    // ... (Giữ nguyên phần logic kiểm tra thắng thua bên trong) ...
     let title = "";
     let msg = "";
 
     if (gameMode === "pvp") {
-      title = player === 1 ? "CHIẾN THẮNG! 🏆" : "CHIẾN THẮNG! 🏆";
+      title = "CHIẾN THẮNG! 🏆";
       msg =
-        player === 1
-          ? "Người chơi 1 (X) đã xuất sắc giành chiến thắng!"
-          : "Người chơi 2 (O) đã xuất sắc giành chiến thắng!";
+        player === 1 ? "Người chơi 1 (X) thắng!" : "Người chơi 2 (O) thắng!";
+      playSound("win");
     } else {
-      // Chế độ đấu AI
       if (player === 1) {
         title = "CHÚC MỪNG! 🎉";
-        msg = "Bạn đã đánh bại AI! Trí tuệ siêu phàm!";
+        msg = "Bạn đã đánh bại AI!";
+        playSound("win");
       } else {
         title = "THẤT BẠI... 💀";
-        msg = "AI đã chiến thắng. Hãy thử lại nhé!";
+        msg = "AI đã chiến thắng.";
+        playSound("lose");
       }
     }
 
-    // Thay thế alert bằng showResult
     setTimeout(() => showResult(title, msg), 200);
 
     gameOver = true;
     clearInterval(timerInterval);
-    turnInfoEl.textContent = "Trò chơi kết thúc!";
+    turnInfoEl.textContent = "Kết thúc!";
   }
 }
 
@@ -250,10 +281,8 @@ function highlightLastMove(row, col) {
   const y = row * CELL_SIZE + CELL_SIZE / 2;
 
   ctx.beginPath();
-  ctx.strokeStyle = "#e74c3c"; // Màu đỏ nổi bật
+  ctx.strokeStyle = "#e74c3c";
   ctx.lineWidth = 2;
-
-  // Vẽ dấu + nhỏ ở giữa quân cờ để đánh dấu
   const size = 4;
   ctx.moveTo(x - size, y);
   ctx.lineTo(x + size, y);
@@ -263,6 +292,7 @@ function highlightLastMove(row, col) {
 }
 
 async function aiMove() {
+  // Nếu game đã kết thúc (do hết giờ hoặc người chơi thắng trước đó), AI không được đi nữa
   if (gameOver || currentPlayer !== 2) return;
 
   turnInfoEl.textContent = "AI đang tính...";
@@ -273,8 +303,13 @@ async function aiMove() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ board, mode: gameMode }),
     });
-
     const data = await res.json();
+
+    // --- SỬA Ở ĐÂY ---
+    // Kiểm tra lại lần nữa: Trong lúc AI đang "nghĩ" (fetch),
+    // nếu đồng hồ đã về 0 (gameOver = true) thì HỦY nước đi này ngay.
+    if (gameOver) return;
+    // ----------------
 
     if (!data.move) return;
 
@@ -315,13 +350,18 @@ function checkWin(player) {
   return false;
 }
 
-/* ---------------- TIMER & UI ---------------- */
-
+// --- TIMER & UI ---
 function startTurnTimer() {
-  clearInterval(timerInterval);
+  if (timerInterval) clearInterval(timerInterval);
+
   turnStartTime = Date.now();
 
   timerInterval = setInterval(() => {
+    if (gameOver) {
+      clearInterval(timerInterval);
+      return;
+    }
+
     const now = Date.now();
     const elapsed = now - turnStartTime;
 
@@ -331,30 +371,32 @@ function startTurnTimer() {
     turnStartTime = now;
     updateTimers();
 
-    // Xử lý khi Người chơi 1 hết giờ
     if (timeP1 <= 0 && currentPlayer === 1) {
-      let msg =
-        gameMode === "pvp"
-          ? "Người chơi 1 hết giờ! Người chơi 2 thắng."
-          : "Bạn đã hết thời gian suy nghĩ!";
-      showResult("HẾT GIỜ ⏳", msg); // Dùng Modal
-
-      gameOver = true;
-      clearInterval(timerInterval);
+      handleTimeOut(1);
     }
 
-    // Xử lý khi Người chơi 2 (hoặc AI) hết giờ
     if (timeP2 <= 0 && currentPlayer === 2) {
-      let msg =
-        gameMode === "pvp"
-          ? "Người chơi 2 hết giờ! Người chơi 1 thắng."
-          : "AI đã hết thời gian!";
-      showResult("ĐỐI THỦ HẾT GIỜ ⏳", msg); // Dùng Modal
-
-      gameOver = true;
-      clearInterval(timerInterval);
+      handleTimeOut(2);
     }
   }, 200);
+}
+
+function handleTimeOut(playerWhoLost) {
+  clearInterval(timerInterval);
+  gameOver = true;
+
+  if (playerWhoLost === 1) {
+    playSound(gameMode === "pvp" ? "win" : "lose");
+    showResult("HẾT GIỜ ⏳", "Người chơi 1 đã hết thời gian!");
+  } else {
+    playSound("win");
+    showResult(
+      "HẾT GIỜ ⏳",
+      gameMode === "pvp"
+        ? "Người chơi 2 hết thời gian!"
+        : "AI đã hết thời gian!"
+    );
+  }
 }
 
 function formatTime(ms) {
@@ -411,21 +453,34 @@ function resetGame() {
   startTurnTimer();
 }
 
-// === CÁC HÀM XỬ LÝ MODAL (Thêm vào cuối file) ===
-const modal = document.getElementById("resultModal");
-const modalTitle = document.getElementById("modalTitle");
-const modalMsg = document.getElementById("modalMessage");
-
+// === CÁC HÀM XỬ LÝ MODAL (Đã thêm lại) ===
 function showResult(title, message) {
   modalTitle.textContent = title;
   modalMsg.textContent = message;
-
-  modal.classList.add("show"); // Hiện modal
-
-  // Phát âm thanh chiến thắng nếu muốn (tùy chọn)
+  modal.classList.add("show"); // Thêm class 'show' để hiện modal
 }
 
 function closeModalAndReset() {
-  modal.classList.remove("show"); // Ẩn modal
-  resetGame(); // Gọi hàm reset game có sẵn
+  modal.classList.remove("show");
+  resetGame();
+}
+
+// === HÀM PHÁT ÂM THANH ===
+function playSound(type) {
+  let audioId = "";
+  if (type === "move") audioId = "sound-move";
+  else if (type === "win") audioId = "sound-win";
+  else if (type === "lose") audioId = "sound-lose";
+  else if (type === "click") audioId = "sound-click";
+
+  const audio = document.getElementById(audioId);
+
+  if (audio) {
+    audio.currentTime = 0;
+    audio
+      .play()
+      .catch((e) =>
+        console.warn("Chưa tương tác với web nên chưa phát được tiếng:", e)
+      );
+  }
 }
