@@ -5,7 +5,7 @@ import math
 
 app = Flask(__name__)
 
-BOARD_SIZE = 15
+BOARD_SIZE = 12
 
 # =======================
 # KIỂM TRA THẮNG
@@ -217,11 +217,17 @@ def minimax(board, depth, player, maximizing, alpha, beta):
 # ROUTES
 # =======================
 @app.route("/")
-def index():
-    return render_template("index.html", board_size=BOARD_SIZE)
+def home():
+    # Trang chủ để chọn chế độ
+    return render_template("home.html")
+@app.route("/game")
+def game():
+    # Trang bàn cờ
+    return render_template("game.html", board_size=12) # Đổi tên file index.html thành game.html
 
 @app.route("/ai_move", methods=["POST"])
 def ai_move():
+    # ... (Giữ nguyên logic xử lý AI cũ) ...
     data = request.get_json()
     board = data.get("board")
     mode = data.get("mode","easy")
@@ -247,3 +253,5 @@ def ai_move():
 
 if __name__=="__main__":
     app.run(debug=True)
+
+

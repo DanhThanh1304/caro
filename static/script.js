@@ -1,4 +1,4 @@
-﻿const BOARD_SIZE = 15;
+﻿const BOARD_SIZE = 12;
 const CELL_SIZE = 38;
 
 // === CẤU HÌNH GIAO DIỆN (THEMES) ===
@@ -59,7 +59,32 @@ const modalMsg = document.getElementById("modalMessage");
 // Khởi chạy game
 init();
 
+function getUrlParameter(name) {
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+  var results = regex.exec(location.search);
+  return results === null
+    ? ""
+    : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
 function init() {
+  // --- THÊM LOGIC NÀY VÀO ĐẦU HÀM INIT ---
+  // 1. Kiểm tra URL xem người dùng chọn mode nào từ trang chủ
+  const urlMode = getUrlParameter("mode");
+
+  // Nếu có mode trên URL, set gameMode và cập nhật UI select
+  if (urlMode && ["easy", "medium", "hard", "pvp"].includes(urlMode)) {
+    gameMode = urlMode;
+    if (modeSelect) {
+      modeSelect.value = gameMode;
+    }
+    // Cập nhật tên người chơi 2
+    if (player2Title) {
+      player2Title.textContent = gameMode === "pvp" ? "Người 2 (O)" : "AI (O)";
+    }
+  }
+
   drawBoard();
   updateUIState();
   startTurnTimer();
@@ -129,7 +154,7 @@ function drawBoard() {
   ctx.stroke();
 
   // 3. Vẽ điểm sao
-  const stars = [3, 7, 11];
+  const stars = [3, 6, 9];
   ctx.fillStyle = theme.line;
   for (let r of stars) {
     for (let c of stars) {

@@ -30,7 +30,8 @@ body {
 
 .main-wrapper {
   width: 100%;
-  max-width: 650px;
+  /* Tăng giá trị này lên */
+  max-width: 750px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -311,4 +312,171 @@ select {
 
 .btn-modal:hover {
   transform: scale(1.05);
+}
+
+/* === THÊM MỚI: STYLES CHO TRANG CHỦ (home.html) === */
+.home-wrapper {
+  width: 35%; /* Đảm bảo nó dãn full ngang */
+  /* Có thể thêm giới hạn bề ngang tối đa cho toàn bộ trang nếu cần, ví dụ: max-width: 1000px; */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+  padding: 40px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  /* Đảm bảo giá trị này lớn (ví dụ: 750px) */
+  max-width: 750px;
+  text-align: center;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.logo-icon {
+  font-size: 4rem;
+  color: #fff;
+  margin-bottom: 15px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
+
+.menu-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-group h3 {
+  font-size: 1rem;
+  color: #eecfa1;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-menu {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px 20px;
+  border-radius: 15px;
+  color: white;
+  margin-bottom: 10px;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+}
+
+.btn-menu span {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.btn-menu small {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.btn-menu:hover {
+  transform: translateY(-2px); /* Nhấc nhẹ lên */
+  background: rgba(255, 255, 255, 0.3); /* Nền hơi sáng một chút */
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Màu riêng khi hover full màu */
+.btn-menu.easy:hover {
+  background: #2ecc71; /* Xanh lá cho Dễ */
+  color: #fff; /* Đổi màu chữ nếu cần */
+}
+.btn-menu.medium:hover {
+  background: #f1c40f; /* Vàng cho Trung Bình */
+  color: #fff;
+}
+.btn-menu.hard:hover {
+  background: #e74c3c; /* Đỏ cho Khó */
+  color: #fff;
+}
+.btn-menu.pvp:hover {
+  background: #9b59b6; /* Tím cho PvP */
+  color: #fff;
+}
+
+.menu-divider {
+  position: relative;
+  margin: 10px 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.menu-divider span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.2); /* Hack nền */
+  backdrop-filter: blur(10px);
+  padding: 0 10px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+}
+
+.home-footer {
+  margin-top: 30px;
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+/* === NÚT QUAY LẠI TRANG CHỦ (TRANG GAME) === */
+.btn-back-home {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 8px 15px;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+  transition: 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 100; /* Đảm bảo nút nằm trên cùng */
+}
+.btn-back-home:hover {
+  background: white;
+  color: #333;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .btn-back-home {
+    position: static;
+    display: inline-block;
+    margin-bottom: 15px;
+  }
 }
