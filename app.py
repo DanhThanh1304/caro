@@ -152,6 +152,70 @@ def get_static_heuristic_score(board):
 
     return ai_total - (human_total * 1.1)
 
+def find_critical_moves(board, player):
+    """
+    Tìm các nước đi quan trọng:
+    - Nước thắng ngay (4 quân liên tiếp)
+    - Nước chặn đối phương (đối phương có 3+ quân liên tiếp)
+    """
+    n = len(board)
+    critical = []
+    opponent = 1 if player == 2 else 2
+    
+    # Kiểm tra tất cả ô trống
+    for i in range(n):
+        for j in range(n):
+            if board[i][j] != 0:
+                continue
+            
+            # Thử đặt quân của mình
+            board[i][j] = player
+            if check_win(board, player):
+                board[i][j] = 0
+                return [(i, j)]  # Thắng ngay, return luôn
+            board[i][j] = 0
+            
+            # Thử đặt quân đối phương xem có nguy hiểm không
+            board[i][j] = opponent
+            if check_win(board, opponent):
+                board[i][j] = 0
+                critical.append((i, j))  # Phải chặn
+                continue
+            board[i][j] = 0
+            
+            # Kiểm tra đối phương có 3 quân liên tiếp không (nguy hiểm!)
+            board[i][j] = opponent
+            is_dangerous = False
+            for dx, dy in [(1,0), (0,1), (1,1), (1,-1)]:
+                count = 1  # Đếm quân ở vị trí hiện tại
+                
+                # Đếm về phía trước
+                for k in range(1, 5):
+                    x, y = i + dx*k, j + dy*k
+                    if 0 <= x < n and 0 <= y < n and board[x][y] == opponent:
+                        count += 1
+                    else:
+                        break
+                
+                # Đếm về phía sau
+                for k in range(1, 5):
+                    x, y = i - dx*k, j - dy*k
+                    if 0 <= x < n and 0 <= y < n and board[x][y] == opponent:
+                        count += 1
+                    else:
+                        break
+                
+                if count >= 3:  # 3 quân liên tiếp trở lên
+                    is_dangerous = True
+                    break
+            
+            board[i][j] = 0
+            
+            if is_dangerous:
+                critical.append((i, j))
+    
+    return critical
+
 def minimax(board, depth, player, maximizing, alpha, beta):
     opponent = 1
     if check_win(board, 2): return (None, 100000)
@@ -162,57 +226,61 @@ def minimax(board, depth, player, maximizing, alpha, beta):
     moves = []
     n = len(board)
     
-    # Bước 1: Thu thập các nước đi gần quân cờ hiện tại
-    for i in range(n):
-        for j in range(n):
-            if board[i][j] == 0:
-                is_near = False
-                for dx in range(-1, 2):
-                    for dy in range(-1, 2):
-                        if dx == 0 and dy == 0: continue
-                        if is_in(board, i+dx, j+dy) and board[i+dx][j+dy] != 0:
-                            is_near = True
-                            break
-                    if is_near: break
-                if is_near:
-                    moves.append((i,j))
+    # *** THÊM BƯỚC NÀY: Kiểm tra nước đi quan trọng trước ***
+    critical_moves = find_critical_moves(board, 2)
+    if critical_moves:
+        moves = critical_moves  # Ưu tiên các nước đi quan trọng
+    else:
+        # Bước 1: Thu thập các nước đi gần quân cờ (trong vòng 2 ô)
+        for i in range(n):
+            for j in range(n):
+                if board[i][j] == 0:
+                    is_near = False
+                    for dx in range(-2, 3):
+                        for dy in range(-2, 3):
+                            if dx == 0 and dy == 0: continue
+                            if is_in(board, i+dx, j+dy) and board[i+dx][j+dy] != 0:
+                                is_near = True
+                                break
+                        if is_near: break
+                    if is_near:
+                        moves.append((i,j))
+        
+        # Bước 2: Nếu không tìm thấy nước đi gần, lấy tất cả ô trống
+        if not moves:
+            for i in range(n):
+                for j in range(n):
+                    if board[i][j] == 0:
+                        moves.append((i,j))
     
-    # Bước 2: Giới hạn số lượng nước đi (tối đa 20 nước)
-    if len(moves) > 20:
+    # KIỂM TRA THÊM: Nếu vẫn không có nước đi (bàn cờ đầy)
+    if not moves:
+        return (None, 0)
+    
+    # Bước 3: Giới hạn số lượng nước đi (tối đa 20 nước) - BỎ QUA nếu là critical moves
+    if len(moves) > 20 and not critical_moves:
         scored_moves = []
         for mv in moves:
             i, j = mv
             score = 0
             
-            # Đánh giá cả tấn công và phòng thủ
             for dx, dy in [(1,0), (0,1), (1,1), (1,-1)]:
                 for k in range(-4, 5):
                     x, y = i + k*dx, j + k*dy
                     if 0 <= x < n and 0 <= y < n:
-                        # Đếm quân AI (tấn công) - trọng số cao hơn
                         if board[x][y] == 2:
                             score += 2
-                        # Đếm quân đối phương (phòng thủ)
                         elif board[x][y] == 1:
                             score += 1
             
             scored_moves.append((score, mv))
         
-        # Sắp xếp và giữ lại 20 nước tốt nhất
         scored_moves.sort(reverse=True)
         moves = [mv for _, mv in scored_moves[:20]]
 
-    # Bước 3: Nếu không có nước đi gần, lấy tất cả ô trống
-    if not moves:
-        for i in range(n):
-            for j in range(n):
-                if board[i][j] == 0:
-                    moves.append((i,j))
-        if not moves:
-            return (None, 0)
-
-    # Bước 4: Xáo trộn để tránh AI chơi giống nhau mỗi lần
-    random.shuffle(moves)
+    # Bước 4: Xáo trộn (trừ khi là critical moves)
+    if not critical_moves:
+        random.shuffle(moves)
     
     best_move = None
     
@@ -231,7 +299,7 @@ def minimax(board, depth, player, maximizing, alpha, beta):
             
             alpha = max(alpha, eval_score)
             if beta <= alpha:
-                break  # Alpha-beta pruning
+                break
         
         return (best_move, max_eval)
     else:
@@ -248,7 +316,7 @@ def minimax(board, depth, player, maximizing, alpha, beta):
             
             beta = min(beta, eval_score)
             if beta <= alpha:
-                break  # Alpha-beta pruning
+                break
         
         return (best_move, min_eval)
 
