@@ -161,6 +161,8 @@ def minimax(board, depth, player, maximizing, alpha, beta):
 
     moves = []
     n = len(board)
+    
+    # Bước 1: Thu thập các nước đi gần quân cờ hiện tại
     for i in range(n):
         for j in range(n):
             if board[i][j] == 0:
@@ -169,11 +171,38 @@ def minimax(board, depth, player, maximizing, alpha, beta):
                     for dy in range(-1, 2):
                         if dx == 0 and dy == 0: continue
                         if is_in(board, i+dx, j+dy) and board[i+dx][j+dy] != 0:
-                            is_near = True; break
+                            is_near = True
+                            break
                     if is_near: break
                 if is_near:
                     moves.append((i,j))
+    
+    # Bước 2: Giới hạn số lượng nước đi (tối đa 20 nước)
+    if len(moves) > 20:
+        scored_moves = []
+        for mv in moves:
+            i, j = mv
+            score = 0
+            
+            # Đánh giá cả tấn công và phòng thủ
+            for dx, dy in [(1,0), (0,1), (1,1), (1,-1)]:
+                for k in range(-4, 5):
+                    x, y = i + k*dx, j + k*dy
+                    if 0 <= x < n and 0 <= y < n:
+                        # Đếm quân AI (tấn công) - trọng số cao hơn
+                        if board[x][y] == 2:
+                            score += 2
+                        # Đếm quân đối phương (phòng thủ)
+                        elif board[x][y] == 1:
+                            score += 1
+            
+            scored_moves.append((score, mv))
+        
+        # Sắp xếp và giữ lại 20 nước tốt nhất
+        scored_moves.sort(reverse=True)
+        moves = [mv for _, mv in scored_moves[:20]]
 
+    # Bước 3: Nếu không có nước đi gần, lấy tất cả ô trống
     if not moves:
         for i in range(n):
             for j in range(n):
@@ -182,8 +211,12 @@ def minimax(board, depth, player, maximizing, alpha, beta):
         if not moves:
             return (None, 0)
 
+    # Bước 4: Xáo trộn để tránh AI chơi giống nhau mỗi lần
     random.shuffle(moves)
+    
     best_move = None
+    
+    # Bước 5: Minimax với alpha-beta pruning
     if maximizing:
         max_eval = -math.inf
         for mv in moves:
@@ -191,12 +224,15 @@ def minimax(board, depth, player, maximizing, alpha, beta):
             board[x][y] = 2
             _, eval_score = minimax(board, depth - 1, player, False, alpha, beta)
             board[x][y] = 0
+            
             if eval_score > max_eval:
                 max_eval = eval_score
                 best_move = mv
+            
             alpha = max(alpha, eval_score)
             if beta <= alpha:
-                break
+                break  # Alpha-beta pruning
+        
         return (best_move, max_eval)
     else:
         min_eval = math.inf
@@ -205,12 +241,15 @@ def minimax(board, depth, player, maximizing, alpha, beta):
             board[x][y] = 1
             _, eval_score = minimax(board, depth - 1, player, True, alpha, beta)
             board[x][y] = 0
+            
             if eval_score < min_eval:
                 min_eval = eval_score
                 best_move = mv
+            
             beta = min(beta, eval_score)
             if beta <= alpha:
-                break
+                break  # Alpha-beta pruning
+        
         return (best_move, min_eval)
 
 # =======================
@@ -237,13 +276,13 @@ def ai_move():
         bcopy = deepcopy(board)
         mv, sc = minimax(bcopy, 1, 2, True, -math.inf, math.inf)
     elif mode=="medium":
-        # MEDIUM = minimax depth 3
+        # MEDIUM = minimax depth 2
         bcopy = deepcopy(board)
-        mv, sc = minimax(bcopy, 3, 2, True, -math.inf, math.inf)
+        mv, sc = minimax(bcopy, 2, 2, True, -math.inf, math.inf)
     else:
         # HARD = minimax depth 3 + heuristic fallback
         bcopy = deepcopy(board)
-        mv, sc = minimax(bcopy, 3, 2, True, -10**9, 10**9)
+        mv, sc = minimax(bcopy, 3, 2, True, -math.inf, math.inf)
         if mv is None:
             mv = heuristic_move(board, 2)
 
