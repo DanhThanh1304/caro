@@ -6,20 +6,20 @@ const THEMES = {
   wood: {
     board: "#eecfa1",
     line: "#5e4026",
-    p1: { color: "#000", stroke: null }, // Đen
-    p2: { color: "#fff", stroke: "#ddd" }, // Trắng
+    p1: { color: "#000", stroke: null },
+    p2: { color: "#fff", stroke: "#ddd" },
   },
   paper: {
-    board: "#f8f9fa", // Màu giấy trắng
-    line: "#2c3e50", // Đường kẻ đen nhạt
+    board: "#f8f9fa",
+    line: "#2c3e50",
     p1: { color: "#2c3e50", stroke: null },
-    p2: { color: "#ffffff", stroke: "#2c3e50" }, // Trắng viền đen
+    p2: { color: "#ffffff", stroke: "#2c3e50" },
   },
   dark: {
-    board: "#2d3436", // Màu xám đen
-    line: "#636e72", // Đường kẻ xám sáng
-    p1: { color: "#00cec9", stroke: null }, // Xanh Neon
-    p2: { color: "#ff7675", stroke: null }, // Đỏ nhạt
+    board: "#2d3436",
+    line: "#636e72",
+    p1: { color: "#00cec9", stroke: null },
+    p2: { color: "#ff7675", stroke: null },
   },
 };
 
@@ -36,6 +36,8 @@ let turnStartTime;
 let timerInterval;
 let timeP1 = 4 * 60 * 1000;
 let timeP2 = 4 * 60 * 1000;
+
+let startingSide = 1; // 1 = Human/P1, 2 = AI/P2
 
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
@@ -69,9 +71,23 @@ function getUrlParameter(name) {
 }
 
 function init() {
-  // --- THÊM LOGIC NÀY VÀO ĐẦU HÀM INIT ---
-  // 1. Kiểm tra URL xem người dùng chọn mode nào từ trang chủ
   const urlMode = getUrlParameter("mode");
+  const urlStart = getUrlParameter("start");
+
+  if (urlStart && (urlStart === "1" || urlStart === "2")) {
+    startingSide = parseInt(urlStart);
+  }
+
+  const startSelect = document.getElementById("startSideSelect");
+  if (startSelect) {
+    startSelect.value = startingSide;
+
+    startSelect.addEventListener("change", () => {
+      startingSide = parseInt(startSelect.value);
+      playSound("click");
+      resetGame();
+    });
+  }
 
   // Nếu có mode trên URL, set gameMode và cập nhật UI select
   if (urlMode && ["easy", "medium", "hard", "pvp"].includes(urlMode)) {
@@ -79,15 +95,11 @@ function init() {
     if (modeSelect) {
       modeSelect.value = gameMode;
     }
-    // Cập nhật tên người chơi 2
+
     if (player2Title) {
       player2Title.textContent = gameMode === "pvp" ? "Người 2 (O)" : "AI (O)";
     }
   }
-
-  drawBoard();
-  updateUIState();
-  startTurnTimer();
 
   // --- 1. SỰ KIỆN CHO GAME MODE (Độ khó) ---
   if (modeSelect) {
@@ -124,13 +136,14 @@ function init() {
     });
   }
 
-  // --- 4. SỰ KIỆN NÚT TRONG MODAL ---
   const modalBtn = document.querySelector(".btn-modal");
   if (modalBtn) {
     modalBtn.addEventListener("click", () => {
       playSound("click");
     });
   }
+
+  resetGame();
 }
 
 function drawBoard() {
@@ -259,8 +272,7 @@ canvas.addEventListener("click", async (e) => {
 
 function makeMove(row, col, player) {
   // --- THÊM DÒNG NÀY ---
-  if (gameOver) return; // Nếu game đã kết thúc (hết giờ), chặn mọi nước đi
-  // --------------------
+  if (gameOver) return;
 
   board[row][col] = player;
   moveCount++;
@@ -272,7 +284,6 @@ function makeMove(row, col, player) {
   playSound("move");
 
   if (checkWin(player)) {
-    // ... (Giữ nguyên phần logic kiểm tra thắng thua bên trong) ...
     let title = "";
     let msg = "";
 
@@ -317,7 +328,6 @@ function highlightLastMove(row, col) {
 }
 
 async function aiMove() {
-  // Nếu game đã kết thúc (do hết giờ hoặc người chơi thắng trước đó), AI không được đi nữa
   if (gameOver || currentPlayer !== 2) return;
 
   turnInfoEl.textContent = "AI đang tính...";
@@ -326,15 +336,11 @@ async function aiMove() {
     const res = await fetch("/ai_move", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ board, mode: gameMode }),
+      body: JSON.stringify({ board, mode: gameMode, moveCount }),
     });
     const data = await res.json();
 
-    // --- SỬA Ở ĐÂY ---
-    // Kiểm tra lại lần nữa: Trong lúc AI đang "nghĩ" (fetch),
-    // nếu đồng hồ đã về 0 (gameOver = true) thì HỦY nước đi này ngay.
     if (gameOver) return;
-    // ----------------
 
     if (!data.move) return;
 
@@ -461,7 +467,7 @@ function resetGame() {
   board = Array(BOARD_SIZE)
     .fill()
     .map(() => Array(BOARD_SIZE).fill(0));
-  currentPlayer = 1;
+  currentPlayer = startingSide;
   gameOver = false;
   moveCount = 0;
   timeP1 = 4 * 60 * 1000;
@@ -476,13 +482,18 @@ function resetGame() {
   drawBoard();
   updateUIState();
   startTurnTimer();
+
+  if (gameMode !== "pvp" && currentPlayer === 2) {
+    // Delay một chút cho tự nhiên
+    setTimeout(aiMove, 500);
+  }
 }
 
 // === CÁC HÀM XỬ LÝ MODAL (Đã thêm lại) ===
 function showResult(title, message) {
   modalTitle.textContent = title;
   modalMsg.textContent = message;
-  modal.classList.add("show"); // Thêm class 'show' để hiện modal
+  modal.classList.add("show");
 }
 
 function closeModalAndReset() {
